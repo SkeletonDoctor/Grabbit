@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 import Observation
 
-/// Downloads yt-dlp and ffmpeg/ffprobe into ~/Library/Application Support/YTDown/bin,
+/// Downloads yt-dlp and ffmpeg/ffprobe into ~/Library/Application Support/Grabbit/bin,
 /// verifying each file against the publisher's SHA-256 checksum before installing it.
 @MainActor
 @Observable

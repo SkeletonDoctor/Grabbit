@@ -20,6 +20,7 @@ struct ComposerView: View {
     @State private var installer = ToolInstaller.shared
     @State private var updater = Updater.shared
     @State private var dismissedUpdate: String?
+    @State private var modeBeforeAudioOnly: DownloadMode?   // restored when the next link has video again
     @State private var dismissedClipboardChange = -1   // don't re-suggest a clipboard link once it's been used
     @FocusState private var urlFocused: Bool
 
@@ -37,6 +38,15 @@ struct ComposerView: View {
         return urls.count > 1 ? urls : []
     }
     private var isBatch: Bool { !batchURLs.isEmpty }
+    /// The fetched media (or, before fetching, the site itself) has no video at all.
+    private var audioOnlySource: Bool {
+        if isBatch { return false }
+        return info?.isAudioOnly ?? (MediaSite.match(trimmedURL)?.audioOnly ?? false)
+    }
+    /// SponsorBlock has data for YouTube only; batches may mix sites, so leave it available there.
+    private var sponsorAvailable: Bool {
+        isBatch || !urlLooksValid || MediaSite.match(trimmedURL)?.name == "YouTube"
+    }
     private var canDownload: Bool {
         if isBatch { return options.mode != .custom }
         return urlLooksValid && (options.mode != .custom || options.customFormatID != nil)
@@ -58,9 +68,10 @@ struct ComposerView: View {
                 } else if let info, !isFetching {
                     PreviewCard(info: info)
                 }
-                ModePicker(mode: $options.mode, customAvailable: !isBatch && info != nil && !(info?.isPlaylist ?? false))
+                ModePicker(mode: $options.mode, customAvailable: !isBatch && info != nil && !(info?.isPlaylist ?? false),
+                           videoAvailable: !audioOnlySource)
                 OptionsPanel(options: $options, info: info)
-                ExtrasPanel(options: $options)
+                ExtrasPanel(options: $options, sponsorAvailable: sponsorAvailable)
                 footer
             }
             .padding(.horizontal, 28)
@@ -110,6 +121,17 @@ struct ComposerView: View {
         }
         .onChange(of: options) { _, new in settings.lastOptions = new }
         .onChange(of: urlText) { _, _ in scheduleAutoFetch() }
+        .onChange(of: audioOnlySource) { _, audioOnly in
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                if audioOnly, options.mode == .video || options.mode == .videoOnly {
+                    modeBeforeAudioOnly = options.mode
+                    options.mode = .audio
+                } else if !audioOnly, let previous = modeBeforeAudioOnly {
+                    if options.mode == .audio { options.mode = previous }
+                    modeBeforeAudioOnly = nil
+                }
+            }
+        }
         .onChange(of: options.includePlaylist) { _, _ in
             if info != nil { fetch() }
         }
@@ -131,14 +153,16 @@ struct ComposerView: View {
 
     private var hero: some View {
         HStack(spacing: 14) {
-            Image(systemName: "arrow.down")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.white)
+            GrabbitMark()
+                .fill(.white)
+                .padding(9)
                 .frame(width: 50, height: 50)
-                .glass(RoundedRectangle(cornerRadius: 15, style: .continuous), tint: .red.opacity(0.9))
+                .background(brandGradient, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                .shadow(color: Color(red: 0.95, green: 0.22, blue: 0.50).opacity(0.35), radius: 8, y: 3)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text("YTDown").font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("Paste a link, pick a format, and go.")
+                Text("Grabbit").font(.system(size: 28, weight: .bold, design: .rounded))
+                Text("Video and audio from YouTube, TikTok, Instagram, SoundCloud and 1,000+ more sites.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -149,13 +173,13 @@ struct ComposerView: View {
     private var updateBanner: some View {
         switch updater.phase {
         case .ready(let release) where dismissedUpdate != release.version:
-            updateCard(release, title: "YTDown \(release.version) is ready",
+            updateCard(release, title: "Grabbit \(release.version) is ready",
                        detail: "It installs when you restart — or automatically the next time you quit.") {
                 Button("Restart Now") { updater.installAndRelaunch() }
                     .prominentGlassButton(tint: .blue).buttonBorderShape(.capsule)
             }
         case .available(let release) where dismissedUpdate != release.version:
-            updateCard(release, title: "YTDown \(release.version) is available",
+            updateCard(release, title: "Grabbit \(release.version) is available",
                        detail: Updater.installBlocker ?? "A newer version has been published on GitHub.") {
                 if Updater.installBlocker == nil {
                     Button("Download Update") { Task { await updater.download(release) } }
@@ -167,7 +191,7 @@ struct ComposerView: View {
         case .downloading(let release, let progress):
             HStack(spacing: 12) {
                 ProgressView(value: progress).tint(.blue).frame(maxWidth: 220)
-                Text("Downloading YTDown \(release.version)… \(Int(progress * 100))%")
+                Text("Downloading Grabbit \(release.version)… \(Int(progress * 100))%")
                     .font(.callout.monospacedDigit()).foregroundStyle(.secondary)
             }
             .card(padding: 14, tint: .blue.opacity(0.14))
@@ -284,6 +308,7 @@ struct ComposerView: View {
                 Image(systemName: "sparkles")
                 Text("Use copied link")
                     .fontWeight(.medium)
+                SiteBadge(link: link, compact: true)
                 Text(link).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
             }
             .font(.callout)
@@ -318,7 +343,7 @@ struct ComposerView: View {
             VStack(alignment: .leading, spacing: 10) {
                 RoundedRectangle(cornerRadius: 5).fill(.quaternary).frame(height: 18)
                 RoundedRectangle(cornerRadius: 5).fill(.quaternary).frame(width: 180, height: 14)
-                Text("Fetching video info…").font(.callout).foregroundStyle(.secondary)
+                Text("Fetching info…").font(.callout).foregroundStyle(.secondary)
             }
         }
         .card()
@@ -370,7 +395,7 @@ struct ComposerView: View {
                         .contentTransition(.numericText())
                         .padding(.horizontal, 12).padding(.vertical, 7)
                         .glass(Capsule())
-                        .help("Estimated file size, based on the sizes YouTube reports")
+                        .help("Estimated file size, based on the sizes the site reports")
                         .animation(.snappy, value: size)
                 }
 
@@ -473,7 +498,7 @@ struct ComposerView: View {
         if isBatch {
             var o = options
             o.includePlaylist = false
-            for url in batchURLs { manager.enqueue(url: url, info: nil, options: o) }
+            for url in batchURLs { manager.enqueue(url: url, info: nil, options: DownloadManager.adapted(o, for: url)) }
         } else {
             manager.enqueue(url: trimmedURL, info: info, options: effectiveOptions)
         }
@@ -529,7 +554,7 @@ struct ComposerView: View {
                 Text(needsYTDLP ? "One-time setup needed" : "\(names.joined(separator: " & ")) not found")
                     .font(.headline)
                 Text(needsYTDLP
-                     ? "YTDown uses yt-dlp to download and ffmpeg to merge video and convert audio. Install them with one click (about 170 MB, checksum-verified)."
+                     ? "Grabbit uses yt-dlp to download and ffmpeg to merge video and convert audio. Install them with one click (about 170 MB, checksum-verified)."
                      : "ffmpeg is needed to merge video with audio and to convert to MP3.")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -586,11 +611,7 @@ struct ComposerView: View {
     private func checkClipboard() {
         guard urlText.isEmpty, NSPasteboard.general.changeCount != dismissedClipboardChange,
               let s = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              s.count < 500,
-              let u = URL(string: s), let host = u.host?.lowercased(),
-              host.contains("youtube.com") || host.contains("youtu.be") || host.contains("vimeo.com")
-                || host.contains("soundcloud.com") || host.contains("tiktok.com") || host.contains("x.com")
-                || host.contains("twitter.com") || host.contains("instagram.com")
+              s.count < 500, !s.contains(where: \.isWhitespace), MediaSite.match(s) != nil
         else { return }
         withAnimation { clipboardSuggestion = s }
     }
@@ -605,8 +626,16 @@ struct PreviewCard: View {
         HStack(alignment: .top, spacing: 18) {
             AsyncImage(url: info.thumbnail) { phase in
                 switch phase {
-                case .success(let img): img.resizable().aspectRatio(contentMode: .fill)
-                default: Rectangle().fill(.quaternary).overlay(Image(systemName: "photo").foregroundStyle(.tertiary))
+                case .success(let img):
+                    // Portrait and square artwork (TikTok, Reels, album covers) sits whole over a blurred fill.
+                    ZStack {
+                        img.resizable().aspectRatio(contentMode: .fill)
+                            .frame(width: 240, height: 135).blur(radius: 18).opacity(0.8).clipped()
+                        img.resizable().aspectRatio(contentMode: .fit)
+                    }
+                default:
+                    Rectangle().fill(.quaternary)
+                        .overlay(Image(systemName: info.isAudioOnly ? "waveform" : "photo").foregroundStyle(.tertiary))
                 }
             }
             .frame(width: 240, height: 135)
@@ -624,12 +653,15 @@ struct PreviewCard: View {
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
 
             VStack(alignment: .leading, spacing: 8) {
-                if info.isPlaylist {
-                    Label("Playlist · \(info.entryCount) videos", systemImage: "list.bullet.rectangle")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(.red.gradient, in: Capsule())
+                HStack(spacing: 6) {
+                    SiteBadge(link: info.pageURL)
+                    if info.isPlaylist {
+                        Label("\(info.entryCount) items", systemImage: "list.bullet.rectangle")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(.red.gradient, in: Capsule())
+                    }
                 }
                 Text(info.title)
                     .font(.title3.weight(.semibold))
@@ -641,6 +673,9 @@ struct PreviewCard: View {
                 HStack(spacing: 14) {
                     if let views = info.viewCount {
                         Label(views.formatted(.number.notation(.compactName)) + " views", systemImage: "eye")
+                    }
+                    if info.isAudioOnly {
+                        Label("Audio", systemImage: "waveform")
                     }
                     if let top = info.availableHeights.first {
                         Label("Up to \(String(top))p", systemImage: "sparkles.tv")
@@ -669,7 +704,7 @@ struct CommandSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("yt-dlp command").font(.title2.weight(.semibold))
-            Text("This is exactly what YTDown will run. You can paste it into Terminal.")
+            Text("This is exactly what Grabbit will run. You can paste it into Terminal.")
                 .foregroundStyle(.secondary)
             ScrollView {
                 Text(command)

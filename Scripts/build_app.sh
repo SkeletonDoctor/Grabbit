@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds a release YTDown.app into ./build
+# Builds a release Grabbit.app into ./build
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -8,18 +8,18 @@ if [[ -z "${DEVELOPER_DIR:-}" && -d /Applications/Xcode.app ]]; then
   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 fi
 
-APP="build/YTDown.app"
+APP="build/Grabbit.app"
 VERSION="$(tr -d '[:space:]' < VERSION)"
 ARCHS=(--arch arm64 --arch x86_64)   # universal: Apple Silicon + Intel
 mkdir -p build
-echo "→ Compiling YTDown $VERSION (release)…"
+echo "→ Compiling Grabbit $VERSION (release)…"
 swift build -c release "${ARCHS[@]}"
-BIN="$(swift build -c release "${ARCHS[@]}" --show-bin-path)/YTDown"
+BIN="$(swift build -c release "${ARCHS[@]}" --show-bin-path)/Grabbit"
 
 echo "→ Assembling bundle…"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/YTDown"
+cp "$BIN" "$APP/Contents/MacOS/Grabbit"
 
 if [[ ! -f build/AppIcon.icns ]]; then
   echo "→ Rendering icon…"
@@ -34,10 +34,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>YTDown</string>
-  <key>CFBundleDisplayName</key><string>YTDown</string>
+  <key>CFBundleName</key><string>Grabbit</string>
+  <key>CFBundleDisplayName</key><string>Grabbit</string>
   <key>CFBundleIdentifier</key><string>com.vlad.ytdown</string>
-  <key>CFBundleExecutable</key><string>YTDown</string>
+  <key>CFBundleExecutable</key><string>Grabbit</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>

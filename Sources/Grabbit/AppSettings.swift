@@ -65,13 +65,22 @@ final class AppSettings {
         }
     }
 
-    /// Where history, managed tools and staged updates live. `YTDOWN_SUPPORT_DIR` overrides it (testing).
+    /// Where history, managed tools and staged updates live. `GRABBIT_SUPPORT_DIR` overrides it (testing).
     static let supportDirectory: URL = {
-        if let custom = ProcessInfo.processInfo.environment["YTDOWN_SUPPORT_DIR"], !custom.isEmpty {
+        if let custom = ProcessInfo.processInfo.environment["GRABBIT_SUPPORT_DIR"], !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
-        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("YTDown", isDirectory: true)
+        let fm = FileManager.default
+        let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let current = base.appendingPathComponent("Grabbit", isDirectory: true)
+        // The app used to be called YTDown: carry its data over once, and leave a link behind so
+        // paths saved in old history entries (e.g. the built-in ffmpeg) keep resolving.
+        let legacy = base.appendingPathComponent("YTDown", isDirectory: true)
+        if !fm.fileExists(atPath: current.path), fm.fileExists(atPath: legacy.path),
+           (try? fm.moveItem(at: legacy, to: current)) != nil {
+            try? fm.createSymbolicLink(at: legacy, withDestinationURL: current)
+        }
+        return current
     }()
 
     static let defaultTemplate = "%(title)s [%(id)s].%(ext)s"

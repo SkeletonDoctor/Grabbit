@@ -61,6 +61,14 @@ struct MediaInfo: Identifiable {
     let isPlaylist: Bool
     let entryCount: Int
     let formats: [MediaFormat]
+    /// The page this media lives on (falls back to the link that was fetched).
+    var pageURL: String = ""
+
+    /// True when there is nothing to see, only to hear (SoundCloud, Bandcamp, podcasts…).
+    var isAudioOnly: Bool {
+        if !formats.isEmpty { return !formats.contains(where: \.hasVideo) }
+        return MediaSite.match(pageURL)?.audioOnly ?? false
+    }
 
     var availableHeights: [Int] {
         Array(Set(formats.filter(\.hasVideo).compactMap(\.height))).sorted(by: >)
@@ -151,13 +159,14 @@ struct MediaInfo: Identifiable {
         return MediaInfo(
             id: obj["id"] as? String ?? UUID().uuidString,
             title: obj["title"] as? String ?? "Untitled",
-            uploader: (obj["uploader"] as? String) ?? (obj["channel"] as? String),
+            uploader: (obj["uploader"] as? String) ?? (obj["channel"] as? String) ?? (obj["creator"] as? String),
             duration: (obj["duration"] as? NSNumber)?.doubleValue,
             thumbnail: thumb,
             viewCount: (obj["view_count"] as? NSNumber)?.intValue,
             isPlaylist: isPlaylist,
             entryCount: (obj["playlist_count"] as? Int) ?? entries.count,
-            formats: formats
+            formats: formats,
+            pageURL: (obj["webpage_url"] as? String) ?? (obj["original_url"] as? String) ?? ""
         )
     }
 }

@@ -5,6 +5,8 @@ import SwiftUI
 struct ModePicker: View {
     @Binding var mode: DownloadMode
     var customAvailable: Bool
+    /// False for audio-only sources, where the video modes can't produce anything.
+    var videoAvailable = true
     @Namespace private var ns
 
     var body: some View {
@@ -20,7 +22,8 @@ struct ModePicker: View {
 
     private func tile(_ m: DownloadMode) -> some View {
         let selected = mode == m
-        let enabled = m != .custom || customAvailable
+        let needsVideo = m == .video || m == .videoOnly
+        let enabled = (m != .custom || customAvailable) && (!needsVideo || videoAvailable)
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
         return Button {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { mode = m }
@@ -35,7 +38,8 @@ struct ModePicker: View {
                 Text(m.rawValue)
                     .font(.headline)
                     .foregroundStyle(selected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
-                Text(m == .custom && !customAvailable ? "Fetch a video first to see its formats" : m.subtitle)
+                Text(needsVideo && !videoAvailable ? "This link is audio only"
+                     : m == .custom && !customAvailable ? "Fetch a link first to see its formats" : m.subtitle)
                     .font(.caption)
                     .foregroundStyle(selected ? AnyShapeStyle(.white.opacity(0.85)) : AnyShapeStyle(.secondary))
                     .lineLimit(2, reservesSpace: true)
@@ -237,6 +241,8 @@ private struct FormatList: View {
 
 struct ExtrasPanel: View {
     @Binding var options: DownloadOptions
+    /// SponsorBlock only has data for YouTube.
+    var sponsorAvailable = true
     @State private var expanded = false
 
     private var isVideo: Bool { options.mode != .audio }
@@ -270,6 +276,8 @@ struct ExtrasPanel: View {
                             GlassChip(title: "Chapters", symbol: "list.bullet.indent", isOn: $options.embedChapters)
                                 .disabled(!isVideo)
                             GlassChip(title: "Skip sponsors", symbol: "forward.end", isOn: $options.sponsorBlock)
+                                .disabled(!sponsorAvailable)
+                                .help(sponsorAvailable ? "Cut sponsor segments using SponsorBlock" : "SponsorBlock only works for YouTube")
                             GlassChip(title: "Subtitles", symbol: "captions.bubble", isOn: $options.subtitles)
                                 .disabled(!isVideo)
                             GlassChip(title: "Trim", symbol: "scissors", isOn: $options.trimEnabled)

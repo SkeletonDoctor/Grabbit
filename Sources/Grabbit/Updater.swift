@@ -5,7 +5,7 @@ import Observation
 
 /// Self-update from GitHub Releases.
 ///
-/// Each release carries `YTDown.zip` and `YTDown.zip.sig` (an Ed25519 signature made with the
+/// Each release carries `Grabbit.zip` and `Grabbit.zip.sig` (an Ed25519 signature made with the
 /// maintainer's private key, see Scripts/sign_update.swift). The app downloads the archive,
 /// verifies the signature against the public key below, stages the new bundle, and swaps it in
 /// on restart or the next quit. Nothing unsigned is ever installed.
@@ -13,9 +13,9 @@ import Observation
 @Observable
 final class Updater {
     /// The GitHub repository releases are pulled from. Forks: change this and `publicKey`.
-    nonisolated static let repository = "SkeletonDoctor/YTDown"
+    nonisolated static let repository = "SkeletonDoctor/Grabbit"
     nonisolated static let publicKey = "FhOSVm4rPUfNnyDIVA4vdeHsNjes0hEQuYEyQ+HA+GA="
-    nonisolated static let archiveName = "YTDown.zip"
+    nonisolated static let archiveName = "Grabbit.zip"
 
     static var releasesPage: URL { URL(string: "https://github.com/\(repository)/releases")! }
 
@@ -60,10 +60,10 @@ final class Updater {
             return "This is a development build."
         }
         if bundle.path.contains("/AppTranslocation/") {
-            return "Move YTDown to the Applications folder and reopen it to enable automatic updates."
+            return "Move Grabbit to the Applications folder and reopen it to enable automatic updates."
         }
         if !FileManager.default.isWritableFile(atPath: bundle.deletingLastPathComponent().path) {
-            return "YTDown can't write to \(bundle.deletingLastPathComponent().path)."
+            return "Grabbit can't write to \(bundle.deletingLastPathComponent().path)."
         }
         return nil
     }
@@ -75,6 +75,32 @@ final class Updater {
         case .checking, .downloading: return true
         default: return false
         }
+    }
+
+    // MARK: Rename from YTDown
+
+    /// Copies that updated from the old name are still sitting in a bundle called YTDown.app.
+    /// Rename the bundle in place and reopen it, so Finder, the Dock and Spotlight show "Grabbit".
+    /// Returns true if the app is about to relaunch.
+    static func adoptNewBundleNameIfNeeded() -> Bool {
+        let fm = FileManager.default
+        let bundle = Bundle.main.bundleURL
+        let target = bundle.deletingLastPathComponent().appendingPathComponent("Grabbit.app")
+        guard bundle.lastPathComponent == "YTDown.app", installBlocker == nil,
+              !fm.fileExists(atPath: target.path),
+              (try? fm.moveItem(at: bundle, to: target)) != nil
+        else { return false }
+        relaunch(at: target)
+        return true
+    }
+
+    /// Opens `app` as soon as this process has exited.
+    private static func relaunch(at app: URL) {
+        let waiter = Process()
+        waiter.executableURL = URL(fileURLWithPath: "/bin/sh")
+        waiter.arguments = ["-c", "while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.2; done; open \"$0\"",
+                            app.path]
+        try? waiter.run()
     }
 
     // MARK: Scheduling
@@ -172,12 +198,13 @@ final class Updater {
 
             let unpacked = Self.stagingDirectory.appendingPathComponent("unpacked", isDirectory: true)
             try Self.runTool("/usr/bin/ditto", ["-x", "-k", zip.path, unpacked.path])
-            let app = unpacked.appendingPathComponent("YTDown.app")
-            guard let staged = Bundle(url: app),
+            guard let app = (try? fm.contentsOfDirectory(at: unpacked, includingPropertiesForKeys: nil))?
+                    .first(where: { $0.pathExtension == "app" }),
+                  let staged = Bundle(url: app),
                   staged.bundleIdentifier == Bundle.main.bundleIdentifier,
                   let stagedVersion = staged.infoDictionary?["CFBundleShortVersionString"] as? String,
                   Self.isVersion(stagedVersion, newerThan: Self.currentVersion ?? "0")
-            else { throw InstallError("The downloaded update isn't a newer copy of YTDown.") }
+            else { throw InstallError("The downloaded update isn't a newer copy of Grabbit.") }
             try? Self.runTool("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app.path])
 
             stagedApp = app
@@ -264,16 +291,11 @@ final class Updater {
                 throw error
             }
         } catch {
-            NSLog("YTDown: update install failed: \(error)")
+            NSLog("Grabbit: update install failed: \(error)")
             return
         }
         stagedApp = nil
         try? fm.removeItem(at: Self.stagingDirectory)
-        guard relaunchOnQuit else { return }
-        let waiter = Process()
-        waiter.executableURL = URL(fileURLWithPath: "/bin/sh")
-        waiter.arguments = ["-c", "while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.2; done; open \"$0\"",
-                            current.path]
-        try? waiter.run()
+        if relaunchOnQuit { Self.relaunch(at: current) }
     }
 }

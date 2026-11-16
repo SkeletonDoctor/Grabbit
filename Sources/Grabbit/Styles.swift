@@ -287,6 +287,37 @@ struct SectionHeader: View {
     }
 }
 
+// MARK: - Brand mark
+
+/// Grabbit's mark: a download arrow whose stem is a pair of rabbit ears, on a tray line.
+/// Same geometry as the app icon (Scripts/make_icon.swift).
+struct GrabbitMark: Shape {
+    func path(in rect: CGRect) -> Path {
+        let u = min(rect.width, rect.height)
+        let origin = CGPoint(x: rect.midX - u / 2, y: rect.midY - u / 2)
+        func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: origin.x + x * u, y: origin.y + y * u) }
+        var path = Path()
+        for (cx, degrees) in [(CGFloat(0.40), CGFloat(-7)), (0.60, 7)] {
+            let w = 0.13 * u, h = 0.44 * u
+            let ear = Path(roundedRect: CGRect(x: -w / 2, y: -h / 2, width: w, height: h), cornerRadius: w / 2)
+            let c = pt(cx, 0.31)
+            path.addPath(ear, transform: CGAffineTransform(translationX: c.x, y: c.y).rotated(by: degrees * .pi / 180))
+        }
+        var head = Path()
+        head.move(to: pt(0.25, 0.50)); head.addLine(to: pt(0.75, 0.50)); head.addLine(to: pt(0.5, 0.75)); head.closeSubpath()
+        path.addPath(head)
+        path.addPath(head.strokedPath(StrokeStyle(lineWidth: 0.09 * u, lineJoin: .round)))
+        path.addPath(Path(roundedRect: CGRect(x: pt(0.26, 0).x, y: pt(0, 0.88).y, width: 0.48 * u, height: 0.075 * u),
+                          cornerRadius: 0.0375 * u))
+        return path
+    }
+}
+
+/// The icon's coral → pink → violet plate, for the in-app logo tile.
+let brandGradient = LinearGradient(colors: [Color(red: 1.0, green: 0.45, blue: 0.33), Color(red: 0.95, green: 0.22, blue: 0.50),
+                                            Color(red: 0.52, green: 0.26, blue: 0.95)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+
 // MARK: - Backdrop
 
 enum BackdropStyle: String, CaseIterable, Identifiable {

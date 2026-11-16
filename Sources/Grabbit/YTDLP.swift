@@ -99,9 +99,12 @@ enum YTDLP {
         args.append(url)
         let result = try await run(bin, args)
         guard result.status == 0 else {
-            throw YTDLPError.failed(lastError(in: result.stderr) ?? "yt-dlp exited with code \(result.status)")
+            let raw = lastError(in: result.stderr) ?? "yt-dlp exited with code \(result.status)"
+            throw YTDLPError.failed(explain(raw, link: url, settings: settings))
         }
-        return try MediaInfo.parse(result.stdout)
+        var info = try MediaInfo.parse(result.stdout)
+        if info.pageURL.isEmpty { info.pageURL = url }
+        return info
     }
 
     static func version(settings: AppSettings) async -> String? {
@@ -127,6 +130,27 @@ enum YTDLP {
             return err.replacingOccurrences(of: "ERROR: ", with: "")
         }
         return lines.last(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+    }
+
+    /// Adds a plain-language next step to the yt-dlp errors people actually hit on social sites.
+    static func explain(_ raw: String, link: String, settings: AppSettings) -> String {
+        let text = raw.lowercased()
+        let site = MediaSite.displayName(for: link) ?? "the site"
+        if text.contains("unsupported url") {
+            return "This link isn't something yt-dlp can download. Make sure it points at a single video, track or playlist page."
+        }
+        let needsLogin = ["login required", "log in", "sign in", "cookies", "registered users", "private",
+                          "members-only", "age-restricted", "rate-limit", "not available to you"]
+        if needsLogin.contains(where: text.contains) {
+            let how = settings.cookieBrowser == .none
+                ? "Sign in to \(site) in your browser, then choose that browser in Settings → Network → Use cookies from."
+                : "Make sure you're signed in to \(site) in \(settings.cookieBrowser.label) and can open this link there."
+            return raw + "\n\n" + how
+        }
+        if text.contains("geo") && text.contains("restrict") || text.contains("not available in your country") {
+            return raw + "\n\nThis one is blocked in your region."
+        }
+        return raw
     }
 
     static func cookieArgs(_ settings: AppSettings) -> [String] {
@@ -225,6 +249,8 @@ enum YTDLP {
         if !limit.isEmpty { a += ["--limit-rate", limit] }
         a.append(o.includePlaylist ? "--yes-playlist" : "--no-playlist")
 
+        // Social posts use the whole caption as their title; keep file names within what Finder allows.
+        a += ["--trim-filenames", "150"]
         a += ["-P", settings.outputDirectory.path]
         let template = o.includePlaylist ? settings.playlistTemplate : settings.filenameTemplate
         a += ["-o", template]

@@ -117,8 +117,15 @@ final class DownloadManager {
         var o = settings.lastOptions
         o.includePlaylist = false
         o.customFormatID = nil
+        enqueue(url: url, info: nil, options: Self.adapted(o, for: url))
+    }
+
+    /// Options for a link queued without a preview: no custom stream, and audio for audio-only sites.
+    static func adapted(_ options: DownloadOptions, for url: String) -> DownloadOptions {
+        var o = options
         if o.mode == .custom { o.mode = .video }
-        enqueue(url: url, info: nil, options: o)
+        if MediaSite.match(url)?.audioOnly == true, o.mode != .audio { o.mode = .audio }
+        return o
     }
 
     /// Links queued without a preview (batch, menu bar) get their title and thumbnail
@@ -298,7 +305,7 @@ final class DownloadManager {
             notify(title: "Download complete", body: item.title)
         } else {
             let message = YTDLP.lastError(in: item.log.joined(separator: "\n")) ?? "yt-dlp exited with code \(exitCode)"
-            item.status = .failed(message)
+            item.status = .failed(YTDLP.explain(message, link: item.url, settings: settings))
             notify(title: "Download failed", body: item.title)
         }
         pump()
@@ -363,7 +370,7 @@ final class DownloadManager {
             try FileManager.default.createDirectory(at: Self.historyURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(Array(records)).write(to: Self.historyURL, options: .atomic)
         } catch {
-            NSLog("YTDown: failed to save history: \(error)")
+            NSLog("Grabbit: failed to save history: \(error)")
         }
     }
 

@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor static var settings: AppSettings?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if Updater.adoptNewBundleNameIfNeeded() { exit(0) }
         // Needed when launched via `swift run` (no bundle) so the window gets focus and a Dock icon.
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -44,7 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct YTDownApp: App {
+struct GrabbitApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var settings: AppSettings
     @State private var manager: DownloadManager
@@ -59,7 +60,7 @@ struct YTDownApp: App {
     }
 
     var body: some Scene {
-        Window("YTDown", id: "main") {
+        Window("Grabbit", id: "main") {
             ContentView()
                 .environment(settings)
                 .environment(manager)

@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "YTDown",
+    name: "Grabbit",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "YTDown",
-            path: "Sources/YTDown",
+            name: "Grabbit",
+            path: "Sources/Grabbit",
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]

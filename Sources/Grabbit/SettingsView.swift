@@ -52,11 +52,11 @@ private struct GeneralSettings: View {
             }
             Section("Behavior") {
                 Stepper("Simultaneous downloads: \(settings.maxConcurrent)", value: $settings.maxConcurrent, in: 1...6)
-                Toggle("Fetch video info automatically when a link is pasted", isOn: $settings.autoFetchOnPaste)
+                Toggle("Fetch info automatically when a link is pasted", isOn: $settings.autoFetchOnPaste)
                 Toggle("Notify when downloads finish", isOn: $settings.notifyOnFinish)
             }
             Section {
-                Toggle("Show YTDown in the menu bar", isOn: $settings.showMenuBarIcon)
+                Toggle("Show Grabbit in the menu bar", isOn: $settings.showMenuBarIcon)
                 Toggle("Keep the Mac awake while downloading", isOn: $settings.preventSleep)
             } header: {
                 Text("Background")
@@ -121,7 +121,7 @@ private struct UpdateSettings: View {
                         .frame(width: 34, height: 34)
                         .glass(Circle(), tint: .blue.opacity(0.9))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("YTDown \(Updater.currentVersion ?? "(development build)")").fontWeight(.semibold)
+                        Text("Grabbit \(Updater.currentVersion ?? "(development build)")").fontWeight(.semibold)
                         Text(statusText).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -142,7 +142,7 @@ private struct UpdateSettings: View {
                 Toggle("Download and install updates automatically", isOn: $settings.autoInstallUpdates)
                     .disabled(!settings.autoCheckUpdates)
             } footer: {
-                Text("Updates come from github.com/\(Updater.repository) and are only installed if their signature verifies. A downloaded update is applied the next time YTDown restarts or quits.")
+                Text("Updates come from github.com/\(Updater.repository) and are only installed if their signature verifies. A downloaded update is applied the next time Grabbit restarts or quits.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
@@ -205,7 +205,7 @@ private struct NetworkSettings: View {
                     ForEach(CookieBrowser.allCases) { b in Text(b.label).tag(b) }
                 }
             } footer: {
-                Text("Lets yt-dlp access age-restricted, members-only or private videos you can see while signed in. Safari may require Full Disk Access for YTDown.")
+                Text("Lets yt-dlp use your signed-in browser session. Instagram, private or age-restricted posts and members-only videos usually need this. Safari may require Full Disk Access for Grabbit.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

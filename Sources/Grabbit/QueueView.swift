@@ -108,9 +108,10 @@ struct DownloadRow: View {
                     Text(item.title)
                         .font(.callout.weight(.semibold))
                         .lineLimit(2)
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
+                        SiteBadge(link: item.url, compact: true)
                         Image(systemName: item.options.mode.symbol)
-                        Text(item.summary)
+                        Text(item.summary).lineLimit(1)
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)

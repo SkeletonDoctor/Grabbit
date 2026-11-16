@@ -12,7 +12,7 @@ struct MenuBarView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("YTDown").font(.headline)
+                Text("Grabbit").font(.headline)
                 Spacer()
                 Text(statusText).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
             }
@@ -51,12 +51,12 @@ struct MenuBarView: View {
             Divider()
 
             if let copiedLink {
-                row("Download Copied Link", symbol: "sparkles", detail: URL(string: copiedLink)?.host) {
+                row("Download Copied Link", symbol: "sparkles", detail: MediaSite.displayName(for: copiedLink)) {
                     manager.quickEnqueue(url: copiedLink)
                     self.copiedLink = nil
                 }
             }
-            row("Open YTDown", symbol: "macwindow") {
+            row("Open Grabbit", symbol: "macwindow") {
                 openWindow(id: "main")
                 NSApp.activate(ignoringOtherApps: true)
                 dismiss()
@@ -65,7 +65,7 @@ struct MenuBarView: View {
                 NSWorkspace.shared.open(settings.outputDirectory)
                 dismiss()
             }
-            row("Quit YTDown", symbol: "power") { NSApp.terminate(nil) }
+            row("Quit Grabbit", symbol: "power") { NSApp.terminate(nil) }
         }
         .padding(14)
         .frame(width: 300)

@@ -1,4 +1,4 @@
-// Signs release archives so installed copies of YTDown can verify an update really came from
+// Signs release archives so installed copies of Grabbit can verify an update really came from
 // the maintainer before installing it (Ed25519, via CryptoKit).
 //
 //   swift Scripts/sign_update.swift keygen        create the private key (once) and print the public key
