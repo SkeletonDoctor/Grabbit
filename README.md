@@ -33,7 +33,7 @@ After that you never need to come back here: the app updates itself.
 - Quality from 240p to 8K · MP4, MKV, WebM, MOV · "Prefer H.264/AAC" for QuickTime, iPhone and Final Cut
 - Audio as MP3, M4A, Opus, FLAC, WAV or the original stream, 128–320 kbps or best VBR
 - Extras: cover art, metadata, chapters, subtitles (including auto-generated), SponsorBlock removal (YouTube), download only a time range
-- Whole playlists into their own folder with numbered files
+- Whole playlists and albums into their own folder, with numbered files and track-number tags so players keep the running order
 - Batch mode: paste several links, one per line, and queue them all at once
 - Browser cookies for age-restricted or members-only videos, optional speed limit
 - Estimated file size before you download, and a button that shows the exact yt-dlp command

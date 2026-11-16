@@ -248,6 +248,12 @@ enum YTDLP {
         let limit = settings.rateLimit.trimmingCharacters(in: .whitespaces)
         if !limit.isEmpty { a += ["--limit-rate", limit] }
         a.append(o.includePlaylist ? "--yes-playlist" : "--no-playlist")
+        if o.includePlaylist {
+            // Albums: tag each file with its position so players keep the running order, and drop
+            // the "Album - " prefix YouTube Music puts on album titles (it would name the folder).
+            a += ["--parse-metadata", "playlist_index:%(track_number)s"]
+            a += ["--replace-in-metadata", "playlist_title", "^Album - ", ""]
+        }
 
         // Social posts use the whole caption as their title; keep file names within what Finder allows.
         a += ["--trim-filenames", "150"]
