@@ -51,6 +51,8 @@ After that you never need to come back here: the app updates itself.
 
 YTDown checks this repository's [releases](https://github.com/SkeletonDoctor/YTDown/releases) when it starts and once a day after that. When a newer version exists it downloads it in the background, verifies it, and installs it the next time the app restarts or quits — a banner offers **Restart Now** if you'd rather not wait.
 
+![Update ready banner](docs/screenshots/update-ready.png)
+
 Every release archive is signed with an Ed25519 key, and the app refuses anything whose signature doesn't match the public key built into it, so an update can only come from the maintainer. Both automatic checking and automatic installing can be turned off in **Settings → Updates**; **YTDown → Check for Updates…** checks on demand.
 
 The app must live in a folder you can write to (such as Applications) for updates to install.
