@@ -12,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DownloadManager.requestNotificationPermission()
         if let settings = Self.settings {
             Updater.shared.start(settings: settings)
-            ToolInstaller.shared.refreshManagedYTDLPIfStale()
+            ToolInstaller.shared.refreshYTDLPIfStale(settings: settings)
         }
     }
 

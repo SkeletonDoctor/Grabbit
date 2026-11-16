@@ -270,6 +270,9 @@ private struct ToolsSettings: View {
                 }
                 LabeledContent("Version") { Text(version ?? "…").foregroundStyle(.secondary) }
                 TextField("Custom path (optional)", text: $settings.ytdlpPath, prompt: Text("/opt/homebrew/bin/yt-dlp"))
+                Toggle("Keep yt-dlp up to date automatically", isOn: $settings.autoUpdateTools)
+                Text("Checked in the background every few days. A Homebrew install is updated with “brew upgrade yt-dlp”; a custom path is left alone.")
+                    .font(.caption).foregroundStyle(.secondary)
                 HStack {
                     Button(updating ? "Updating…" : "Update yt-dlp") { update() }
                         .glassButton()

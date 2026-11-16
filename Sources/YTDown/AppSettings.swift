@@ -55,6 +55,10 @@ final class AppSettings {
     var autoInstallUpdates: Bool {
         didSet { defaults.set(autoInstallUpdates, forKey: "autoInstallUpdates") }
     }
+    /// Refresh yt-dlp in the background (app-installed or Homebrew) every few days.
+    var autoUpdateTools: Bool {
+        didSet { defaults.set(autoUpdateTools, forKey: "autoUpdateTools") }
+    }
     var lastOptions: DownloadOptions {
         didSet {
             if let data = try? JSONEncoder().encode(lastOptions) { defaults.set(data, forKey: "lastOptions") }
@@ -91,6 +95,7 @@ final class AppSettings {
         preventSleep = defaults.object(forKey: "preventSleep") as? Bool ?? true
         backdropStyle = BackdropStyle(rawValue: defaults.string(forKey: "backdropStyle") ?? "") ?? .aurora
         animateBackdrop = defaults.object(forKey: "animateBackdrop") as? Bool ?? true
+        autoUpdateTools = defaults.object(forKey: "autoUpdateTools") as? Bool ?? true
         autoCheckUpdates = defaults.object(forKey: "autoCheckUpdates") as? Bool ?? true
         autoInstallUpdates = defaults.object(forKey: "autoInstallUpdates") as? Bool ?? true
         if let data = defaults.data(forKey: "lastOptions"),

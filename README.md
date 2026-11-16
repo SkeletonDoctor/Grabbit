@@ -37,7 +37,7 @@ After that you never need to come back here: the app updates itself.
 - Close the window and downloads keep running; the Mac stays awake until they finish
 - Notifications and a Dock badge when downloads complete
 - Links queued without a preview get their title and thumbnail filled in automatically
-- An app-installed yt-dlp keeps itself current
+- yt-dlp is kept current automatically, whether the app installed it or Homebrew did
 
 **Look**
 - Liquid Glass throughout on macOS 26+ (material fallback on macOS 14–15)

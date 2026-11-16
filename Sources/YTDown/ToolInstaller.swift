@@ -73,19 +73,35 @@ final class ToolInstaller {
         return missing
     }
 
-    /// YouTube changes often and old yt-dlp builds stop working, so a copy installed by the app
-    /// quietly updates itself (yt-dlp's own verified `-U`) at most every three days.
-    /// Homebrew or custom installs are left alone.
-    func refreshManagedYTDLPIfStale() {
-        let bin = Self.binDirectory.appendingPathComponent("yt-dlp").path
-        guard FileManager.default.isExecutableFile(atPath: bin), YTDLP.locate("yt-dlp") == bin else { return }
+    /// Set when a background refresh actually installed a newer yt-dlp; shown once as a toast.
+    var updateNote: String?
+
+    /// YouTube changes often and old yt-dlp builds stop working, so yt-dlp is refreshed in the
+    /// background at most every three days: a copy installed by the app updates itself
+    /// (yt-dlp's own verified `-U`), a Homebrew copy goes through `brew upgrade yt-dlp`.
+    /// Anything at a custom path is left alone.
+    func refreshYTDLPIfStale(settings: AppSettings) {
+        guard settings.autoUpdateTools,
+              let bin = YTDLP.locate("yt-dlp", override: settings.ytdlpPath) else { return }
+        let command: (String, [String])
+        if Self.isManaged(bin) {
+            command = (bin, ["-U"])
+        } else if bin.hasPrefix("/opt/homebrew/") || bin.hasPrefix("/usr/local/"), let brew = YTDLP.locate("brew") {
+            command = (brew, ["upgrade", "yt-dlp"])
+        } else {
+            return
+        }
         let key = "ytdlpLastSelfUpdate"
         let last = UserDefaults.standard.object(forKey: key) as? Date ?? .distantPast
         guard Date().timeIntervalSince(last) > 3 * 24 * 60 * 60 else { return }
         UserDefaults.standard.set(Date(), forKey: key)
-        Task.detached(priority: .background) {
-            _ = try? await YTDLP.run(bin, ["-U"])
-            await MainActor.run { ToolInstaller.shared.revision += 1 }
+        Task {
+            let before = await YTDLP.version(settings: settings)
+            // Keep the old Homebrew version on disk so a download already running isn't cut off.
+            _ = try? await YTDLP.run(command.0, command.1, extraEnvironment: ["HOMEBREW_NO_INSTALL_CLEANUP": "1"])
+            let after = await YTDLP.version(settings: settings)
+            if let after, let before, after != before { updateNote = "yt-dlp updated to \(after)" }
+            revision += 1
         }
     }
 

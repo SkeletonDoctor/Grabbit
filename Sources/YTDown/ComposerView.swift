@@ -80,7 +80,18 @@ struct ComposerView: View {
             .ignoresSafeArea()
         }
         .overlay(alignment: .bottom) {
-            if addedToast {
+            if let note = installer.updateNote {
+                Label(note, systemImage: "arrow.triangle.2.circlepath.circle.fill")
+                    .font(.callout.weight(.medium))
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .glassBar(cornerRadius: 22)
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .task {
+                        try? await Task.sleep(for: .seconds(5))
+                        withAnimation { installer.updateNote = nil }
+                    }
+            } else if addedToast {
                 Label("Added to downloads", systemImage: "checkmark.circle.fill")
                     .font(.callout.weight(.medium))
                     .padding(.horizontal, 16).padding(.vertical, 10)

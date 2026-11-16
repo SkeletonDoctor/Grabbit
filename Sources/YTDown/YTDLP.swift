@@ -55,11 +55,11 @@ enum YTDLP {
         let stderr: String
     }
 
-    static func run(_ executable: String, _ args: [String]) async throws -> Output {
+    static func run(_ executable: String, _ args: [String], extraEnvironment: [String: String] = [:]) async throws -> Output {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = args
-        process.environment = environment
+        process.environment = environment.merging(extraEnvironment) { _, new in new }
         let out = Pipe(), err = Pipe()
         process.standardOutput = out
         process.standardError = err
