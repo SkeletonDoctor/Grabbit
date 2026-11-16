@@ -6,7 +6,6 @@ A native macOS app that grabs video and audio from YouTube, TikTok, Instagram, S
 
 ![Grabbit downloading a video](docs/screenshots/main.png)
 
-*Grabbit was called Grabbit until version 1.2. Existing installs update and rename themselves automatically.*
 
 ## Install
 
