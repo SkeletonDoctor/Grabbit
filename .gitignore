@@ -1,0 +1,7 @@
+.build
+.build 2
+build
+.DS_Store
+*.xcodeproj/xcuserdata/
+.swiftpm/
+*.nosync
