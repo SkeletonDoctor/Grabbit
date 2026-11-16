@@ -22,18 +22,10 @@ fi
 ./Scripts/build_app.sh
 
 echo "→ Packaging…"
-ASSETS=(build/Grabbit.zip build/Grabbit.zip.sig build/YTDown.zip build/YTDown.zip.sig)
-rm -rf "${ASSETS[@]}" build/legacy
+ASSETS=(build/Grabbit.zip build/Grabbit.zip.sig)
+rm -f "${ASSETS[@]}"
 ditto -c -k --keepParent build/Grabbit.app build/Grabbit.zip
 swift Scripts/sign_update.swift sign build/Grabbit.zip > build/Grabbit.zip.sig
-
-# Copies from before the rename (YTDown 1.1.x) look for YTDown.zip containing YTDown.app.
-# Shipping the same app under that name lets them update; it renames itself on first launch.
-mkdir -p build/legacy
-ditto build/Grabbit.app build/legacy/YTDown.app
-ditto -c -k --keepParent build/legacy/YTDown.app build/YTDown.zip
-swift Scripts/sign_update.swift sign build/YTDown.zip > build/YTDown.zip.sig
-rm -rf build/legacy
 
 echo "→ Publishing $TAG…"
 git push
