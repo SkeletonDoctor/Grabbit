@@ -77,23 +77,6 @@ final class Updater {
         }
     }
 
-    // MARK: Rename from YTDown
-
-    /// Copies that updated from the old name are still sitting in a bundle called YTDown.app.
-    /// Rename the bundle in place and reopen it, so Finder, the Dock and Spotlight show "Grabbit".
-    /// Returns true if the app is about to relaunch.
-    static func adoptNewBundleNameIfNeeded() -> Bool {
-        let fm = FileManager.default
-        let bundle = Bundle.main.bundleURL
-        let target = bundle.deletingLastPathComponent().appendingPathComponent("Grabbit.app")
-        guard bundle.lastPathComponent == "YTDown.app", installBlocker == nil,
-              !fm.fileExists(atPath: target.path),
-              (try? fm.moveItem(at: bundle, to: target)) != nil
-        else { return false }
-        relaunch(at: target)
-        return true
-    }
-
     /// Opens `app` as soon as this process has exited.
     private static func relaunch(at app: URL) {
         let waiter = Process()

@@ -70,17 +70,8 @@ final class AppSettings {
         if let custom = ProcessInfo.processInfo.environment["GRABBIT_SUPPORT_DIR"], !custom.isEmpty {
             return URL(fileURLWithPath: custom, isDirectory: true)
         }
-        let fm = FileManager.default
-        let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let current = base.appendingPathComponent("Grabbit", isDirectory: true)
-        // The app used to be called YTDown: carry its data over once, and leave a link behind so
-        // paths saved in old history entries (e.g. the built-in ffmpeg) keep resolving.
-        let legacy = base.appendingPathComponent("YTDown", isDirectory: true)
-        if !fm.fileExists(atPath: current.path), fm.fileExists(atPath: legacy.path),
-           (try? fm.moveItem(at: legacy, to: current)) != nil {
-            try? fm.createSymbolicLink(at: legacy, withDestinationURL: current)
-        }
-        return current
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return base.appendingPathComponent("Grabbit", isDirectory: true)
     }()
 
     static let defaultTemplate = "%(title)s [%(id)s].%(ext)s"

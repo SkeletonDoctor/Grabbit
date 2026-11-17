@@ -6,7 +6,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor static var settings: AppSettings?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if Updater.adoptNewBundleNameIfNeeded() { exit(0) }
         // Needed when launched via `swift run` (no bundle) so the window gets focus and a Dock icon.
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
