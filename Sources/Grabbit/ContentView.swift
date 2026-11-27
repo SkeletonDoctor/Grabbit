@@ -13,8 +13,19 @@ struct ContentView: View {
             .background(Backdrop())
             .hiddenToolbarBackground()
             .onChange(of: player.url) { _, url in
-                if url != nil { tab = .nowPlaying; showQueue = true }
+                // Video has to be seen, so always show it; music only takes over the sidebar when
+                // nobody is watching downloads in progress there.
+                guard url != nil, !player.isAudio || manager.activeCount == 0 else { return }
+                withAnimation { tab = .nowPlaying; showQueue = true }
             }
+            .onChange(of: manager.items.count) {
+                // Removing a download from the list also closes it in the player.
+                if let playing = player.url, !manager.items.contains(where: { $0.outputFiles.contains(playing) }) {
+                    player.stop()
+                }
+            }
+            // Closing the window leaves no controls on screen (the app can live on in the menu bar).
+            .onDisappear { player.pause() }
             .inspector(isPresented: $showQueue) {
                 VStack(spacing: 0) {
                     GlassSegmented(options: SidebarTab.allCases, selection: $tab, title: \.rawValue)

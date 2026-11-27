@@ -155,9 +155,7 @@ struct DownloadRow: View {
         .onHover { hovering = $0 }
         .contextMenu { contextItems }
         .sheet(isPresented: $showLog) { LogSheet(item: item) }
-        .onTapGesture(count: 2) {
-            if let f = existingFiles.last { NSWorkspace.shared.open(f) }
-        }
+        .onTapGesture(count: 2) { playOrPause() }
         .onDrag {
             // Drag a finished download straight into Finder, Mail, Final Cut, etc.
             guard let f = existingFiles.last else { return NSItemProvider() }
@@ -170,6 +168,19 @@ struct DownloadRow: View {
         case .finished: return .green.opacity(0.12)
         case .failed: return .red.opacity(0.12)
         default: return nil
+        }
+    }
+
+    /// Whether this row's file is the one loaded in the in-app player.
+    private var isCurrent: Bool { player.url != nil && player.url == existingFiles.last }
+
+    /// Plays the finished file in the Now Playing tab, or pauses/resumes it if it is already there.
+    private func playOrPause() {
+        guard case .finished = item.status, let f = existingFiles.last else { return }
+        if isCurrent {
+            player.toggle()
+        } else {
+            player.play(f, title: item.title, source: MediaSite.displayName(for: item.url) ?? "", artwork: item.thumbnail)
         }
     }
 
@@ -202,12 +213,8 @@ struct DownloadRow: View {
                     iconButton("trash", help: "Remove") { manager.remove(item) }
                 case .finished:
                     iconButton("magnifyingglass", help: "Show in Finder") { reveal() }
-                    let isCurrent = player.url != nil && player.url == existingFiles.last
                     iconButton(isCurrent && player.isPlaying ? "pause.fill" : "play.fill",
-                               help: isCurrent && player.isPlaying ? "Pause" : "Play") {
-                        guard let f = existingFiles.last else { return }
-                        if isCurrent { player.toggle() } else { player.play(f, title: item.title) }
-                    }
+                               help: isCurrent && player.isPlaying ? "Pause" : "Play") { playOrPause() }
                 case .failed, .cancelled:
                     iconButton("arrow.clockwise", help: "Retry") { manager.retry(item) }
                     iconButton("trash", help: "Remove") { manager.remove(item) }
@@ -219,7 +226,11 @@ struct DownloadRow: View {
     @ViewBuilder
     private var contextItems: some View {
         if !existingFiles.isEmpty {
-            Button("Open") { existingFiles.forEach { NSWorkspace.shared.open($0) } }
+            Button(isCurrent && player.isPlaying ? "Pause" : "Play") { playOrPause() }
+            Button("Open in Default App") {
+                if isCurrent { player.pause() }   // don't play the same file twice
+                existingFiles.forEach { NSWorkspace.shared.open($0) }
+            }
             Button("Show in Finder") { reveal() }
             Divider()
         }
