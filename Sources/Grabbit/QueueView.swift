@@ -96,6 +96,7 @@ struct QueueView: View {
 
 struct DownloadRow: View {
     @Environment(DownloadManager.self) private var manager
+    @Environment(Player.self) private var player
     let item: DownloadItem
     @State private var showLog = false
     @State private var hovering = false
@@ -201,8 +202,11 @@ struct DownloadRow: View {
                     iconButton("trash", help: "Remove") { manager.remove(item) }
                 case .finished:
                     iconButton("magnifyingglass", help: "Show in Finder") { reveal() }
-                    iconButton("play.fill", help: "Open") {
-                        if let f = existingFiles.last { NSWorkspace.shared.open(f) }
+                    let isCurrent = player.url != nil && player.url == existingFiles.last
+                    iconButton(isCurrent && player.isPlaying ? "pause.fill" : "play.fill",
+                               help: isCurrent && player.isPlaying ? "Pause" : "Play") {
+                        guard let f = existingFiles.last else { return }
+                        if isCurrent { player.toggle() } else { player.play(f, title: item.title) }
                     }
                 case .failed, .cancelled:
                     iconButton("arrow.clockwise", help: "Retry") { manager.retry(item) }

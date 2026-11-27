@@ -48,6 +48,7 @@ struct GrabbitApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var settings: AppSettings
     @State private var manager: DownloadManager
+    @State private var player = Player()
 
     init() {
         let s = AppSettings()
@@ -63,6 +64,7 @@ struct GrabbitApp: App {
             ContentView()
                 .environment(settings)
                 .environment(manager)
+                .environment(player)
                 .frame(minWidth: 880, minHeight: 620)
         }
         .windowToolbarStyle(.unified(showsTitle: false))
