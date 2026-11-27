@@ -41,6 +41,7 @@ After that you never need to come back here: the app updates itself.
 - Live progress, speed and ETA per download and for the whole queue
 - Cancel, retry, reveal in Finder, per-download log; drag finished files straight out of the list
 - History survives a relaunch, and interrupted downloads resume with Retry
+- **Now Playing** tab: press play on a finished download to listen or watch right in the app, with cover art, a seek bar and skip buttons; formats macOS can't play (WebM, MKV) open in your default player
 
 **In the background**
 - Menu bar item with live progress and one-click download of a copied link
